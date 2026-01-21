@@ -15,31 +15,23 @@ from cheetah.particles import ParticleBeam
 
 class LUMECheetahModel(LUMEModel):
     """Lume Model for Cheetah Simulations"""
-    def __init__(self, 
-                mapping_file, 
-                variable_config_file,
+    def __init__(self,
+                mapping_file,
+                simulator, cached_values, supported_variables
+                #will delete these later
+                #Assume variable instances already created outside and passed in
+                #variable_config_file,
 ):
-        super().__init__()
+        super().__init__(simulator, cached_values, supported_variables)
         #These already come from LUMEModel
-        #self.simulator = simulator
-        #self.cached_values = {}
-        #self._supported_variables = supported_variables
+        self.simulator = simulator
+        self.cached_values = {}
+        self._supported_variables = supported_variables
 
         
         self.mapping_file = mapping_file
-        self.variable_config_file = variable_config_file
-        self.cached_values = {}
+        #self.variable_config_file = variable_config_file
         self.init_values = {}
-        self._supported_variables = self.load_supported_variables()
-
-
-        # change screen reading method to histogram
-        for ele in self.simulator.elements:
-            if isinstance(ele, Screen):
-                ele.method = "histogram"
-
-
-
         self.mapping = get_pv_mad_mapping(mapping_file)
 
 
@@ -54,12 +46,16 @@ class LUMECheetahModel(LUMEModel):
         for name, value in values.items():
             # Validate and set the value in the simulator
             self.cached_values[name] = value  # Placeholder for actual simulator interaction
+        # What should the difference between setting cachd and setting simulator be?
+        # Should get just get simulator values?
+        #Use mapping to set simulator values. 
+        #Simulator can handle energy returns, and shutter? idk.
+
+
+
 
     def reset(self) -> None:
-        """Reset the Cheetah simulator to its initial state."""
-        # Implement reset logic specific to Cheetah simulator
-
-        self.set(self.init_values)  #Reset to inital values     
+        self.simulator.reset()
         self.cached_values.clear()  #Clear cached values
 
     def load_supported_variables(self) -> dict[str, dict]:
