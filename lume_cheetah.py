@@ -22,10 +22,13 @@ class LUMECheetahModel(LUMEModel):
                 #Assume variable instances already created outside and passed in
                 #variable_config_file,
 ):
-        super().__init__(simulator, cached_values, supported_variables)
-        #These already come from LUMEModel
+        super().__init__(
+            simulator=simulator,
+            supported_variables=supported_variables,
+        )
+
         self.simulator = simulator
-        self.cached_values = {}
+        self.cached_values = cached_values
         self._supported_variables = supported_variables
 
         
