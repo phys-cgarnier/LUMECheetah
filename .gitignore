@@ -1,0 +1,11 @@
+# IDE
+.idea/
+.vscode/
+
+# Build artifacts
+*.pyc
+__pycache__/
+.ipynb_checkpoints/
+
+*.png
+beams/*.h5
