@@ -1,6 +1,6 @@
 
 from lume.model import LUMEModel
-from utils.pv_mapping import get_pv_mad_mapping, accesss_cheetah_attribute, add_noise
+from utils.pv_mapping import get_pv_mad_mapping, access_cheetah_attribute
 import numpy as np
 from copy import deepcopy
 
@@ -50,7 +50,60 @@ class LUMECheetahModel(LUMEModel):
         # Should get just get simulator values?
         #Use mapping to set simulator values. 
         #Simulator can handle energy returns, and shutter? idk.
+        self.set_pvs(values)
 
+    def set_pvs(self, values: dict):
+        """
+        Set the corresponding process variable (PV) to the given value on the virtual accelerator simulator.
+        """
+        for pv_name, value in values.items():
+            # handle the beam shutter separately
+            if pv_name == self.simulator.beam_shutter_pv:
+                self.set_shutter(value)
+                continue
+
+            if pv_name == "VIRT:BEAM:RESET_SIM":
+                self.reset()
+                continue
+
+            # get the base pv name
+            base_pv_name = ":".join(pv_name.split(":")[:3])
+            attribute_name = ":".join(pv_name.split(":")[3:])
+
+            # get the beam energy along the lattice -- returns a dict of element names to energies
+            beam_energy_along_lattice = self.simulator.beam_energy_along_lattice
+
+            # check if the pv_name is a control variable
+            if base_pv_name in self.mapping:
+                # set the value in the virtual accelerator simulator
+                element = getattr(self.simulator.lattice, self.mapping[base_pv_name].lower())
+
+                # get the beam energy for the element
+                energy = beam_energy_along_lattice[self.mapping[base_pv_name].lower()]
+
+                # if there are duplicate elements, just grab the first one (both will be adjusted)
+                if isinstance(element, list):
+                    element = element[0]
+
+                try:
+                    print(
+                        "accessing element "
+                        + element.name
+                        + " to set PV "
+                        + pv_name
+                        + " to "
+                        + str(value)
+                    )
+                    access_cheetah_attribute(element, attribute_name, energy, value)
+                except ValueError as e:
+                    raise ValueError(f"Failed to set PV {pv_name}: {str(e)}") from e
+
+            else:
+                raise ValueError(f"Invalid PV base name: {base_pv_name}")
+
+        # at the end of setting all PVs, run the simulation with the initial beam distribution
+        # this will update all readings (screens, BPMs, etc.) in the lattice
+        self.simulator.lattice.track(incoming=self.simulator.beam_distribution)
 
 
 
@@ -58,9 +111,6 @@ class LUMECheetahModel(LUMEModel):
         self.simulator.reset()
         self.cached_values.clear()  #Clear cached values
 
-    def load_supported_variables(self) -> dict[str, dict]:
-        """Load supported variables for the Cheetah simulator."""
-        pass
  
     def set_cached_value(self, name: str, value: float) -> None:
         """Set a cached value for a given variable name.
@@ -71,38 +121,6 @@ class LUMECheetahModel(LUMEModel):
         """
         self.cached_values[name] = value
 
-    def get_energy(self):
-        """
-        Get the energy of the beam in the virtual accelerator simulator at
-        every element for use in calculating the magnetic rigidity.
-
-        Note: need to track on a copy of the lattice to not influence readings!
-        """
-        test_beam = ParticleBeam(
-            torch.zeros(1, 7), energy=self.initial_beam_distribution.energy
-        )
-        test_lattice = deepcopy(self.lattice)
-        element_names = [e.name for e in test_lattice.elements]
-        return dict(
-            zip(
-                element_names,
-                test_lattice.get_beam_attrs_along_segment(("energy",), test_beam)[0],
-            )
-        )
-
-    def set_shutter(self, value: bool):
-        """
-        Set the beam shutter state in the virtual accelerator simulator.
-        If `value` is True, the shutter is closed (no beam), otherwise it is open (beam present).
-        """
-        if value:
-            self.initial_beam_distribution.particle_charges = torch.tensor(0.0)
-        else:
-            self.initial_beam_distribution.particle_charges = (
-                self.initial_beam_distribution_charge
-            )
-    
-    
         
 
         
