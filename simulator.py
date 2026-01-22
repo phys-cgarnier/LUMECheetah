@@ -14,7 +14,7 @@ class CheetahSimulator():
         self.lattice_file = lattice_file
         self.subcell_dest = subcell_dest
         self.initial_beam_distribution = initial_beam_distribution
-        self.beam_distribution = initial_beam_distribution
+        self.beam_distribution = initial_beam_distribution.clone()
         self.initial_beam_distribution_charge = (
             initial_beam_distribution.particle_charges
         )
@@ -35,7 +35,7 @@ class CheetahSimulator():
 
     def reset(self):
         self.setup_lattice()
-        self.beam_distribution = self.initial_beam_distribution
+        self.beam_distribution = self.initial_beam_distribution.clone()
 
     def track(self):
         self.lattice.track(self.beam_distribution)
@@ -72,4 +72,9 @@ class CheetahSimulator():
                 self.initial_beam_distribution_charge
             )
     
-    
+    @property
+    def shutter_pv(self):
+        return self._shutter_pv
+    @shutter_pv.setter
+    def shutter_pv(self, pv_name: str):
+        self._shutter_pv = pv_name
