@@ -129,19 +129,22 @@ def variables_from_dict(
                     output_variables.append(variable_class(**var))
     for variables in [input_variables, output_variables]:
         verify_unique_variable_names(variables)
-    return input_variables, output_variables
+    input_variables_dict = {var.name: var for var in input_variables}
+    output_variables_dict = {var.name: var for var in output_variables}
+
+    return input_variables_dict, output_variables_dict
 
 
 def variables_from_yaml(
     yaml_obj: Union[str, os.PathLike],
-) -> tuple[list[ScalarVariable], list[ScalarVariable]]:
-    """Parses YAML object and returns in- and output variable lists.
+) -> tuple[dict[str, ScalarVariable], dict[str, ScalarVariable]]:
+    """Parses YAML object and returns in- and output variable dictionaries.
 
     Args:
         yaml_obj: YAML formatted string or file path.
 
     Returns:
-        In- and output variable lists.
+        In- and output variable dictionaries.
     """
     if os.path.exists(yaml_obj):
         with open(yaml_obj) as f:
