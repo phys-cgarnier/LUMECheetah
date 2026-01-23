@@ -9,12 +9,13 @@ from cheetah.particles import ParticleBeam
 class CheetahSimulator():
     def __init__(self, lattice_file: str,
                 subcell_dest: str = None,
-                initial_beam_distribution: ParticleBeam = None)-> None:
+                initial_beam_distribution: ParticleBeam = None, shutter_pv: str = None)-> None:
         
         self.lattice_file = lattice_file
         self.subcell_dest = subcell_dest
         self.initial_beam_distribution = initial_beam_distribution
         self.beam_distribution = initial_beam_distribution.clone()
+        self._shutter_pv = shutter_pv
         self.initial_beam_distribution_charge = (
             initial_beam_distribution.particle_charges
         )
@@ -73,8 +74,8 @@ class CheetahSimulator():
             )
     
     @property
-    def shutter_pv(self):
+    def beam_shutter_pv(self):
         return self._shutter_pv
-    @shutter_pv.setter
-    def shutter_pv(self, pv_name: str):
+    @beam_shutter_pv.setter
+    def beam_shutter_pv(self, pv_name: str):
         self._shutter_pv = pv_name
