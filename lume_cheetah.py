@@ -70,8 +70,6 @@ class LUMECheetahModel(LUMEModel):
             self.cached_values[name] = value  
 
 
-        self.set_pvs(values)
-
     def set_pvs(self, values: dict):
         """
         Set the corresponding process variable (PV) to the given value on the virtual accelerator simulator.
@@ -127,13 +125,10 @@ class LUMECheetahModel(LUMEModel):
         # this will update all readings (screens, BPMs, etc.) in the lattice
         self.simulator.lattice.track(incoming=self.simulator.beam_distribution)
 
-
-
     def reset(self) -> None:
         self.simulator.reset()
         self.cached_values.clear()  #Clear cached values
 
- 
     def set_cached_value(self, name: str, value: float) -> None:
         """Set a cached value for a given variable name.
 
