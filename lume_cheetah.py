@@ -1,5 +1,7 @@
 
 from lume.model import LUMEModel
+
+from simulator import CheetahSimulator
 from utils.pv_mapping import get_pv_mad_mapping, access_cheetah_attribute
 import numpy as np
 from copy import deepcopy
@@ -22,7 +24,9 @@ class LUMECheetahModel(LUMEModel):
     """Lume Model for Cheetah Simulations"""
     def __init__(self,
                 mapping_file,
-                simulator, cached_values, supported_variables
+                simulator: CheetahSimulator,
+                cached_values:dict,
+                supported_variables:dict
                 #will delete these later
                 #Assume variable instances already created outside and passed in
                 #variable_config_file,
@@ -52,19 +56,19 @@ class LUMECheetahModel(LUMEModel):
         """
         # Implement setting logic specific to Cheetah simulator
         # Validate and set the value in the simulator, supported variables and 
+        # first assume mapping then don't assume
         for name, value in values.items():
             if name in self.supported_variables:
                 try:
                     self._supported_variables[name].name = value
                 except ValueError as e:
                     print('Unsupported value in supported variable. {name} : {value}. {e}')
-                
             
-            self.cached_values[name] = value  # Placeholder for actual simulator interaction
-        # What should the difference between setting cachd and setting simulator be?
-        # Should get just get simulator values?
-        #Use mapping to set simulator values. 
-        #Simulator can handle energy returns, and shutter? idk.
+            #set and track lattice:
+            self.set_pvs({name: value})
+            #set cached values
+            self.cached_values[name] = value  
+
 
         self.set_pvs(values)
 
@@ -75,7 +79,7 @@ class LUMECheetahModel(LUMEModel):
         for pv_name, value in values.items():
             # handle the beam shutter separately
             if pv_name == self.simulator.beam_shutter_pv:
-                self.set_shutter(value)
+                self.simulator.set_shutter(value)
                 continue
 
             if pv_name == "VIRT:BEAM:RESET_SIM":
@@ -87,7 +91,7 @@ class LUMECheetahModel(LUMEModel):
             attribute_name = ":".join(pv_name.split(":")[3:])
 
             # get the beam energy along the lattice -- returns a dict of element names to energies
-            beam_energy_along_lattice = self.simulator.beam_energy_along_lattice
+            beam_energy_along_lattice = self.simulator.get_energy()
 
             # check if the pv_name is a control variable
             if base_pv_name in self.mapping:
@@ -95,6 +99,8 @@ class LUMECheetahModel(LUMEModel):
                 element = getattr(self.simulator.lattice, self.mapping[base_pv_name].lower())
 
                 # get the beam energy for the element
+                # TODO: (maybe this is to long.... need to simplify later) 
+                # (getter setting on simulator sets lattice attrs)
                 energy = beam_energy_along_lattice[self.mapping[base_pv_name].lower()]
 
                 # if there are duplicate elements, just grab the first one (both will be adjusted)
