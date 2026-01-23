@@ -8,7 +8,12 @@ import torch
 from cheetah.accelerator import Segment, Screen
 from cheetah.particles import ParticleBeam
 
-
+#TODO: implement set/get with current supported variables
+#TODO: this means set supported variables, then sim, then cached values
+#TODO: adjust supported variables to be a flat list of variables with is_settable attribute (reminded need access to lclstools yaml files to generate file)
+#TODO: make bpms, bact unsettable, bctrl settable
+#TODO: add madnames to config file
+#TODO work on dual config model variable grabbing for example ( this require unit handling as well)
 
 
 
@@ -46,13 +51,21 @@ class LUMECheetahModel(LUMEModel):
             values: Dictionary of variable names and their corresponding values to set.
         """
         # Implement setting logic specific to Cheetah simulator
+        # Validate and set the value in the simulator, supported variables and 
         for name, value in values.items():
-            # Validate and set the value in the simulator
+            if name in self.supported_variables:
+                try:
+                    self._supported_variables[name].name = value
+                except ValueError as e:
+                    print('Unsupported value in supported variable. {name} : {value}. {e}')
+                
+            
             self.cached_values[name] = value  # Placeholder for actual simulator interaction
         # What should the difference between setting cachd and setting simulator be?
         # Should get just get simulator values?
         #Use mapping to set simulator values. 
         #Simulator can handle energy returns, and shutter? idk.
+
         self.set_pvs(values)
 
     def set_pvs(self, values: dict):
