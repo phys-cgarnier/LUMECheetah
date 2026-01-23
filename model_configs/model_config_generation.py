@@ -1,5 +1,6 @@
 from ast import In
 from pprint import pp, pprint
+from turtle import setup
 from numpy import zeros
 import yaml
 from simulation_server.virtual_accelerator import VirtualAccelerator
@@ -25,6 +26,11 @@ class OutputVariable:
     value_range_tolerance: float
     variable_class: str
 
+def setup_value_range(value, pv):
+    if value[pv] >0 :
+        return [value[pv]-value[pv]*0.2, value[pv]+value[pv]*0.2]
+    else:
+        return [value[pv]+value[pv]*0.2, value[pv]-value[pv]*0.2]
 
 
 
@@ -72,8 +78,8 @@ for subsystem in input_subsystems:
                 var = InputVariable(
                     default_value=value[pv],
                     is_constant= False,
-                    value_range=[value[pv]-value[pv]*0.2, value[pv]+value[pv]*0.2],
-                    value_range_tolerance=None,
+                    value_range=setup_value_range(value, pv),
+                    value_range_tolerance=.1,
                     variable_class= 'ScalarVariable',
                     )
                 input_variables.update({pv: asdict(var)})
@@ -100,20 +106,21 @@ for subsystem in output_subsystems:
                     var = OutputVariable(
                         default_value=value[pv],
                         is_constant= False,
-                        value_range=[value[pv]-value[pv]*0.2, value[pv]+value[pv]*0.2],
-                        value_range_tolerance=None,
+                        value_range=setup_value_range(value, pv),
+                        value_range_tolerance=.1,
                         variable_class= 'ScalarVariable',
                         )
                     output_variables.update({pv: asdict(var)})
                 elif subsystem =='screens':
-                    var = OutputVariable(
-                        default_value=  0.0, #np.zeros((1024, 1024)).flatten().tolist(),
-                        is_constant= False,
-                        value_range= None,
-                        value_range_tolerance= None,
-                        variable_class= 'ArrayVariable',
-                    )
-                    output_variables.update({pv: asdict(var)})
+                    pass
+                    #var = OutputVariable(
+                    #    default_value=  0.0, #np.zeros((1024, 1024)).flatten().tolist(),
+                    #    is_constant= False,
+                    #    value_range= None,
+                    #    value_range_tolerance= None,
+                    #    variable_class= 'ArrayVariable',
+                    #)
+                    #output_variables.update({pv: asdict(var)})
 
             except Exception as e:
                 #print(f"  Could not get PVs for {attr} in device {device}: {e}")
